@@ -1,33 +1,61 @@
 <template>
-  <h2>Payment form</h2>
-  <form class="payment-form" novalidate @submit.prevent="handleSubmit">
-    <div class="field">
-      <label for="amount">Amount</label>
-      <input id="amount" :value="amount" type="number" inputmode="decimal" step="0.01" required @input="updateAmount" />
-      <p v-if="errors.amount" id="amount-error" class="error" role="alert">{{ errors.amount }}</p>
-    </div>
+  <section>
+    <h2>Start a payment</h2>
+    <form class="payment-form" novalidate @submit.prevent="handleSubmit">
+      <div class="field">
+        <label for="amount">Amount</label>
+        <input
+          id="amount"
+          :value="amount"
+          type="number"
+          inputmode="decimal"
+          step="0.01"
+          required
+          :aria-invalid="errors.amount ? 'true' : undefined"
+          :aria-describedby="errors.amount ? 'amount-error' : undefined"
+          @input="updateAmount"
+        />
+        <p v-if="errors.amount" id="amount-error" class="error" role="alert">
+          {{ errors.amount }}
+        </p>
+      </div>
 
-    <div class="field">
-      <label for="currency">Currency</label>
-      <select id="currency" v-model="currency" required>
-        <option value="" disabled>Select a currency</option>
-        <option v-for="option in CURRENCIES" :key="option" :value="option">{{ option }}</option>
-      </select>
-      <p v-if="errors.currency" id="currency-error" class="error" role="alert">
-        {{ errors.currency }}
-      </p>
-    </div>
+      <div class="field">
+        <label for="currency">Currency</label>
+        <select
+          id="currency"
+          v-model="currency"
+          required
+          :aria-invalid="errors.currency ? 'true' : undefined"
+          :aria-describedby="errors.currency ? 'currency-error' : undefined"
+        >
+          <option value="" disabled>Select a currency</option>
+          <option v-for="option in CURRENCIES" :key="option" :value="option">{{ option }}</option>
+        </select>
+        <p v-if="errors.currency" id="currency-error" class="error" role="alert">
+          {{ errors.currency }}
+        </p>
+      </div>
 
-    <div class="field">
-      <label for="customer-reference">Customer reference</label>
-      <input id="customer-reference" v-model="customerReference" type="text" maxlength="30" required />
-      <p v-if="errors.customerReference" id="customer-reference-error" class="error" role="alert">
-        {{ errors.customerReference }}
-      </p>
-    </div>
+      <div class="field">
+        <label for="customer-reference">Customer reference</label>
+        <input
+          id="customer-reference"
+          v-model="customerReference"
+          type="text"
+          maxlength="30"
+          required
+          :aria-invalid="errors.customerReference ? 'true' : undefined"
+          :aria-describedby="errors.customerReference ? 'customer-reference-error' : undefined"
+        />
+        <p v-if="errors.customerReference" id="customer-reference-error" class="error" role="alert">
+          {{ errors.customerReference }}
+        </p>
+      </div>
 
-    <button type="submit">Start payment</button>
-  </form>
+      <button type="submit">Start payment</button>
+    </form>
+  </section>
 </template>
 
 <script setup lang="ts">

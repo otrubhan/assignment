@@ -1,6 +1,6 @@
 <template>
   <section class="payment-status">
-    <h2>Status</h2>
+    <h2>Payment status</h2>
     <p>Sending {{ amount }} {{ currency }} to customer {{ customerReference }}</p>
     <p>Status: {{ status }}</p>
     <p v-if="showReason">Reason: {{ reason }}</p>

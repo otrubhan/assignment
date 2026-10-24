@@ -1,5 +1,6 @@
 <template>
-  <div id="app">
+  <main id="app">
+    <h1>Payment status inbox</h1>
     <PaymentForm @submit="onSubmit" />
     <PaymentStatus
       v-if="payment"
@@ -10,7 +11,7 @@
       :reason="payment.errorReason"
       :payment-id="payment.paymentId"
     />
-  </div>
+  </main>
 </template>
 
 <script setup lang="ts">
