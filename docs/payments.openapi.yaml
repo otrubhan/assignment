@@ -1,0 +1,156 @@
+openapi: 3.1.0
+info:
+  title: Payment Status Inbox API
+  version: 1.0.0
+  description: |
+    Payment creation contract used by the Vue client. The frontend calls `/api/payments`;
+    its Vite development proxy removes `/api` and forwards the request to this API.
+servers:
+  - url: http://localhost:8080
+    description: Local backend
+paths:
+  /payments:
+    post:
+      operationId: createPayment
+      summary: Start a card payment
+      description: |
+        Creates a payment and returns the fake provider's payment identifier. The client
+        reuses the same Idempotency-Key for retry attempts. The server must persist and
+        honor this key atomically to prevent duplicate payments when a request is retried.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: |
+            Unique UUID for this payment-creation operation. Repeated requests with the same
+            key must return the original result rather than create another payment.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentFormData'
+            example:
+              amount: '12.34'
+              currency: EUR
+              customerReference: customer-123
+      responses:
+        '201':
+          description: Payment accepted by the fake provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePaymentResponse'
+              example:
+                providerPaymentId: prov-123
+        '400':
+          description: Request validation failed. The client displays field errors when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                fieldErrors:
+                  summary: Field-to-message mapping
+                  value:
+                    fieldErrors:
+                      amount: Must be greater than zero.
+                failedFields:
+                  summary: Failed fields with server message
+                  value:
+                    failedFields:
+                      amount: Invalid amount.
+                      currency: Unsupported currency.
+        '500':
+          description: Internal server error. The client may retry this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                reason: Payment could not be created.
+        '502':
+          description: Bad gateway. The client may retry this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+        '503':
+          description: Service unavailable. The client may retry this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+        '504':
+          description: Gateway timeout. The client may retry this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+components:
+  schemas:
+    PaymentFormData:
+      type: object
+      additionalProperties: false
+      required:
+        - amount
+        - currency
+        - customerReference
+      properties:
+        amount:
+          type: string
+          description: Positive decimal amount represented as a string to avoid floating-point conversion.
+          examples:
+            - '12.34'
+        currency:
+          type: string
+          enum:
+            - EUR
+            - USD
+            - CZK
+        customerReference:
+          type: string
+          minLength: 1
+          maxLength: 30
+    CreatePaymentResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - providerPaymentId
+      properties:
+        providerPaymentId:
+          type: string
+          minLength: 1
+    ValidationError:
+      type: object
+      description: |
+        The client recognizes `fieldErrors` or object-valued `failedFields` as a mapping
+        from field names to error messages. It also accepts `failedFields` as an array of
+        field names, in which case it displays a generic invalid-value message.
+      properties:
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
+        failedFields:
+          oneOf:
+            - type: object
+              additionalProperties:
+                type: string
+            - type: array
+              items:
+                type: string
+        reason:
+          type: string
+        message:
+          type: string
+    ServerError:
+      type: object
+      properties:
+        reason:
+          type: string
+        message:
+          type: string
