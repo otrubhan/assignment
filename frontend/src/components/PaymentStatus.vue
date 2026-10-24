@@ -1,11 +1,17 @@
 <template>
   <section class="payment-status">
     <h2>Payment status</h2>
-    <p>Sending {{ amount }} {{ currency }} to customer {{ customerReference }}</p>
-    <p>Status: {{ status }}</p>
-    <p v-if="showReason">Reason: {{ reason }}</p>
-    <p v-if="paymentId">PaymentID: {{ paymentId }}</p>
-    <p v-if="lastUpdatedInSeconds !== undefined || lastUpdatedInSeconds === 0"> Last updated {{ lastUpdatedInSeconds }} seconds ago. </p>
+    <div class="details-section">
+      <p v-if="paymentId"> <strong>Payment ID:</strong> {{ paymentId }} </p>
+      <p>Sending {{ amount }} {{ currency }} to customer {{ customerReference }}</p>
+    </div>
+    <div class="status-section">
+      <p><strong>Status:</strong> {{ status }}</p>
+      <p v-if="showReason"><strong>Reason:</strong> {{ reason }}</p>
+    </div>
+    <div v-if="lastUpdatedInSeconds !== undefined || lastUpdatedInSeconds === 0" class="last-updated-section">
+      <p>Last updated {{ lastUpdatedInSeconds }} seconds ago.</p>
+    </div>
   </section>
 </template>
 
@@ -33,7 +39,18 @@ const showReason: ComputedRef<boolean> = computed(() => props.status === Payment
   max-width: 28rem;
 }
 
-.payment-status p {
-  margin: 0.5rem 0;
+.details-section,
+.status-section,
+.last-updated-section {
+  padding: .5rem .5rem;
 }
-</style>
+
+.payment-status p {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.last-updated-section p {
+  font-size: 0.85rem;
+}</style>
