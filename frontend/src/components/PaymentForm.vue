@@ -43,7 +43,7 @@
           id="customer-reference"
           v-model="customerReference"
           type="text"
-          maxlength="30"
+          :maxlength="CUST_REF_MAX_LENGTH"
           required
           :aria-invalid="errors.customerReference ? 'true' : undefined"
           :aria-describedby="errors.customerReference ? 'customer-reference-error' : undefined"
@@ -63,6 +63,7 @@ import type { Ref } from 'vue';
 import { reactive, ref } from 'vue';
 import { CURRENCIES, isCurrency, type Currency } from '@/types/common.ts';
 import type { PaymentFormData } from '@/types/payment.ts';
+import { CUST_REF_MAX_LENGTH } from '@/types/constants.ts';
 
 const emit = defineEmits<{
   submit: [paymentData: PaymentFormData];
@@ -98,8 +99,8 @@ function validateInput() {
     errors.currency = 'Select a currency.';
   }
 
-  if (customerReference.value.length < 1 || customerReference.value.length > 30) {
-    errors.customerReference = 'Customer reference is required and must be shorter than 30 characters.';
+  if (customerReference.value.length < 1 || customerReference.value.length > CUST_REF_MAX_LENGTH) {
+    errors.customerReference = 'Customer reference is required and must be shorter than ' + CUST_REF_MAX_LENGTH + ' characters.';
   }
 }
 
