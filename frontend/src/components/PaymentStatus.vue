@@ -42,7 +42,7 @@ const showReason: ComputedRef<boolean> = computed(() => props.status === Payment
 .details-section,
 .status-section,
 .last-updated-section {
-  padding: .5rem .5rem;
+  padding: 0.5rem 0.5rem;
 }
 
 .payment-status p {
@@ -53,4 +53,5 @@ const showReason: ComputedRef<boolean> = computed(() => props.status === Payment
 
 .last-updated-section p {
   font-size: 0.85rem;
-}</style>
+}
+</style>

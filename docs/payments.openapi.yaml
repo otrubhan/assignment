@@ -90,6 +90,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServerError'
+  /payments/{id}:
+    get:
+      operationId: getPayment
+      summary: Get payment status
+      description: Looks up a payment using its provider payment ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Provider payment ID.
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Current payment details and latest applied callback state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDetails'
+              example:
+                id: pay-123
+                status: PENDING
+                providerStatus: AUTHORIZED
+                providerPaymentId: prov-123
+                lastCallbackOccurredAt: '2026-10-24T20:30:00Z'
+                amount: '12.34'
+                currency: EUR
+                customerReference: customer-123
+        '404':
+          description: No payment exists with the supplied provider payment ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                reason: Payment not found.
+        '5XX':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
 components:
   schemas:
     PaymentFormData:
@@ -124,6 +167,61 @@ components:
         providerPaymentId:
           type: string
           minLength: 1
+    PaymentDetails:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - providerStatus
+        - providerPaymentId
+        - lastCallbackOccurredAt
+        - amount
+        - currency
+        - customerReference
+      properties:
+        id:
+          type: string
+          description: Internal payment ID.
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SUCCEEDED
+            - FAILED
+            - UNKNOWN
+        providerStatus:
+          type:
+            - string
+            - 'null'
+          description: Latest applied provider status; may be an unrecognized provider value.
+          examples:
+            - AUTHORIZED
+            - CAPTURED
+            - DECLINED
+        providerPaymentId:
+          type: string
+          minLength: 1
+        lastCallbackOccurredAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Timestamp of the last applied callback, or null if none has been applied.
+        amount:
+          type: string
+          description: Decimal amount represented as a string.
+          examples:
+            - '12.34'
+        currency:
+          type: string
+          enum:
+            - EUR
+            - USD
+            - CZK
+        customerReference:
+          type: string
+          maxLength: 30
     ValidationError:
       type: object
       description: |
