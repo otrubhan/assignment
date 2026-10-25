@@ -1,4 +1,4 @@
-import type { Currency } from './common.ts';
+import type { Currency } from './payment.ts';
 
 export interface CreatePaymentResponse {
   providerPaymentId: string;
@@ -11,10 +11,17 @@ export enum BackendPaymentStatus {
   UNKNOWN = 'UNKNOWN',
 }
 
+export enum ProviderPaymentStatus {
+  AUTHORIZED = 'AUTHORIZED',
+  CAPTURED = 'CAPTURED',
+  DECLINED = 'DECLINED',
+  ERROR = 'ERROR',
+}
+
 export interface GetPaymentInfoResponse {
   id: string;
   status: BackendPaymentStatus;
-  providerStatus: string | null | undefined;
+  providerStatus: ProviderPaymentStatus | undefined;
   providerPaymentId: string;
   lastCallbackOccurredAt: string | null | undefined;
   amount: string;
@@ -27,8 +34,9 @@ export interface GetPaymentInfoResponse {
  * - timeout / network / unexpected: no usable HTTP response
  * - invalid-response: expected status but unreadable body
  * - unsupported: request could not be prepared (nothing was sent)
+ * - aborted: cancelled by the caller (e.g. polling stopped)
  */
-export type PaymentApiErrorKind = 'http' | 'timeout' | 'network' | 'unexpected' | 'invalid-response' | 'unsupported';
+export type PaymentApiErrorKind = 'http' | 'timeout' | 'network' | 'unexpected' | 'invalid-response' | 'unsupported' | 'aborted';
 
 export interface PaymentApiError extends Error {
   readonly kind: PaymentApiErrorKind;

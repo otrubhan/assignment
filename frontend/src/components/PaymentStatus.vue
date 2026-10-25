@@ -18,8 +18,7 @@
 <script lang="ts" setup>
 import type { ComputedRef } from 'vue';
 import { computed } from 'vue';
-import { PaymentStatusEnum } from '@/types/payment.ts';
-import type { Currency } from '@/types/common.ts';
+import { type Currency, PaymentStatusEnum } from '@/types/payment.ts';
 
 const props = defineProps<{
   amount: string;

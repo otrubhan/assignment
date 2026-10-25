@@ -61,8 +61,7 @@
 <script setup lang="ts">
 import type { Ref } from 'vue';
 import { reactive, ref } from 'vue';
-import { CURRENCIES, isCurrency, type Currency } from '@/types/common.ts';
-import type { PaymentFormData } from '@/types/payment.ts';
+import { CURRENCIES, isCurrency, type Currency, type PaymentFormData } from '@/types/payment.ts';
 import { CUST_REF_MAX_LENGTH } from '@/types/constants.ts';
 
 withDefaults(defineProps<{ submitting?: boolean }>(), {

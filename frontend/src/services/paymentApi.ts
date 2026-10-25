@@ -1,6 +1,5 @@
-import type { CreatePaymentResponse, GetPaymentInfoResponse, PaymentApiErrorKind, PaymentApiError as PaymentApiErrorContract } from '@/types/service.ts';
-import type { PaymentFormData } from '@/types/payment.ts';
-import { isCurrency } from '@/types/common.ts';
+import { BackendPaymentStatus, type CreatePaymentResponse, type GetPaymentInfoResponse, type PaymentApiErrorKind, type PaymentApiError as PaymentApiErrorContract } from '@/types/service.ts';
+import { isCurrency, type PaymentFormData } from '@/types/payment.ts';
 import { HttpError, requestJson } from '@/services/httpClient.ts';
 
 export class PaymentApiError extends Error implements PaymentApiErrorContract {
@@ -74,6 +73,8 @@ function toPaymentApiError(error: unknown): PaymentApiError {
       return new PaymentApiError('The backend could not be reached. Its final state could not be confirmed.', undefined, {}, 'network', { cause: error });
     case 'unexpected':
       return new PaymentApiError('The payment request failed unexpectedly.', undefined, {}, 'unexpected', { cause: error });
+    case 'aborted':
+      return new PaymentApiError('The payment request was cancelled.', undefined, {}, 'aborted', { cause: error });
   }
 }
 
@@ -135,6 +136,7 @@ export function toCreatePaymentOutcome(error: unknown): CreatePaymentOutcome {
     case 'timeout':
     case 'network':
     case 'unexpected':
+    case 'aborted':
       return { kind: 'unreachable', reason };
     case 'http': {
       const status = apiError.status ?? 0;
@@ -144,15 +146,68 @@ export function toCreatePaymentOutcome(error: unknown): CreatePaymentOutcome {
   }
 }
 
-export async function getPaymentInfo(providerPaymentId: string): Promise<GetPaymentInfoResponse> {
+/**
+ * Outcome of a single payment-status read, independent of how the UI presents it.
+ * - status: backend returned the current payment status
+ * - unreachable: no HTTP response (timeout/network); try again later
+ * - transient: backend answered but could not serve the status now (5xx, 409/429, unreadable body); try again later
+ * - rejected: backend definitively refused the read (e.g. 404); retrying will not help
+ * - aborted: the read was cancelled by the caller; nothing should be applied
+ */
+export type PaymentStatusOutcome =
+  | { kind: 'status'; status: BackendPaymentStatus }
+  | { kind: 'unreachable' | 'transient' | 'rejected'; reason: string }
+  | { kind: 'aborted' };
+
+export function toPaymentStatusOutcome(error: unknown): PaymentStatusOutcome {
+  const apiError = toPaymentApiError(error);
+
+  switch (apiError.kind) {
+    case 'aborted':
+      return { kind: 'aborted' };
+    case 'timeout':
+    case 'network':
+    case 'unexpected':
+      return { kind: 'unreachable', reason: apiError.message };
+    case 'invalid-response':
+      return { kind: 'transient', reason: apiError.message };
+    case 'unsupported':
+      return { kind: 'rejected', reason: apiError.message };
+    case 'http': {
+      const status = apiError.status ?? 0;
+      const definite = status >= 400 && status < 500 && !INCONCLUSIVE_CLIENT_STATUSES.has(status);
+      return { kind: definite ? 'rejected' : 'transient', reason: apiError.message };
+    }
+  }
+}
+
+/** Never rejects; all failures are mapped into the returned outcome. */
+export async function fetchPaymentStatus(providerPaymentId: string, signal?: AbortSignal): Promise<PaymentStatusOutcome> {
+  try {
+    const details = await getPaymentInfo(providerPaymentId, signal);
+    return { kind: 'status', status: details.status };
+  } catch (error) {
+    return toPaymentStatusOutcome(error);
+  }
+}
+
+export async function getPaymentInfo(providerPaymentId: string, signal?: AbortSignal): Promise<GetPaymentInfoResponse> {
   const body = await request(
     `/api/payments/${encodeURIComponent(providerPaymentId)}`,
     {
       method: 'GET',
+      ...(signal && { signal }),
     },
     200
   );
   return parsePaymentDetails(body);
+}
+
+const BACKEND_STATUSES: ReadonlySet<string> = new Set(Object.values(BackendPaymentStatus));
+
+// Our backend only reports its own four statuses; anything unexpected is treated as UNKNOWN rather than breaking the UI.
+function parseBackendStatus(status: string): BackendPaymentStatus {
+  return BACKEND_STATUSES.has(status) ? (status as BackendPaymentStatus) : BackendPaymentStatus.UNKNOWN;
 }
 
 export function parsePaymentDetails(body: unknown): GetPaymentInfoResponse {
@@ -169,11 +224,11 @@ export function parsePaymentDetails(body: unknown): GetPaymentInfoResponse {
     !isCurrency(body.currency) ||
     typeof body.customerReference !== 'string'
   ) {
-    throw new PaymentApiError('The server returned an invalid payment response.', 200);
+    throw new PaymentApiError('The server returned an invalid payment response.', 200, {}, 'invalid-response');
   }
   return {
     id: body.id,
-    status: body.status,
+    status: parseBackendStatus(body.status),
     providerStatus: body.providerStatus,
     providerPaymentId: body.providerPaymentId,
     lastCallbackOccurredAt: body.lastCallbackOccurredAt,
