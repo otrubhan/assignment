@@ -31,7 +31,8 @@ const props = defineProps<{
   lastUpdatedInSeconds?: number;
 }>();
 
-const showReason: ComputedRef<boolean> = computed(() => props.status === PaymentStatusEnum.FAILED || props.status === PaymentStatusEnum.BE_NOT_REACHABLE);
+const REASON_STATUSES: ReadonlySet<PaymentStatusEnum> = new Set([PaymentStatusEnum.FAILED, PaymentStatusEnum.BE_NOT_REACHABLE, PaymentStatusEnum.UNKNOWN]);
+const showReason: ComputedRef<boolean> = computed(() => REASON_STATUSES.has(props.status) && !!props.reason);
 </script>
 
 <style scoped>
