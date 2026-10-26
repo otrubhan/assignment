@@ -133,6 +133,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServerError'
+  /provider-callbacks:
+    post:
+      operationId: receiveProviderCallback
+      summary: Receive a payment status callback from the provider
+      description: |
+        Called by the fake payment provider to report a payment outcome. Provider statuses
+        map to payment statuses as follows: `AUTHORIZED` -> `PENDING`, `CAPTURED` -> `SUCCEEDED`,
+        `DECLINED` -> `FAILED`, and `ERROR`, null, or any other value -> `UNKNOWN`.
+
+        Processing rules:
+        1. A callback with an already recorded `eventId` is applied only once.
+        2. A callback whose `occurredAt` is earlier than or equal to the last applied one is ignored.
+        3. `UNKNOWN` must not replace `SUCCEEDED` or `FAILED`. A later `CAPTURED` or `DECLINED`
+           may replace the previous known outcome.
+        4. A callback for an unknown `providerPaymentId` is rejected with 404.
+
+        A callback that is ignored under rules 1-3 is still acknowledged with 200.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderCallback'
+            examples:
+              captured:
+                summary: Payment captured
+                value:
+                  eventId: evt-1
+                  providerPaymentId: prov-123
+                  status: CAPTURED
+                  occurredAt: '2026-10-24T20:30:00Z'
+              unknownStatus:
+                summary: Unrecognized provider status
+                value:
+                  eventId: evt-2
+                  providerPaymentId: prov-123
+                  status: null
+                  occurredAt: '2026-10-24T20:30:05Z'
+      responses:
+        '200':
+          description: Callback accepted, whether or not it changed the payment state.
+        '400':
+          description: Invalid callback payload, such as a missing field or malformed timestamp.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                fieldErrors:
+                  occurredAt: Must be an ISO-8601 date-time.
+        '404':
+          description: No payment exists with the supplied provider payment ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                reason: Payment not found.
+        '5XX':
+          description: Server error. The provider may retry the callback.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
 components:
   schemas:
     PaymentFormData:
@@ -222,6 +286,36 @@ components:
         customerReference:
           type: string
           maxLength: 30
+    ProviderCallback:
+      type: object
+      required:
+        - eventId
+        - providerPaymentId
+        - occurredAt
+      properties:
+        eventId:
+          type: string
+          minLength: 1
+          description: Provider event identifier used for deduplication.
+        providerPaymentId:
+          type: string
+          minLength: 1
+        status:
+          type:
+            - string
+            - 'null'
+          description: |
+            Provider status. Unrecognized values, `ERROR`, null, or a missing field are
+            accepted and mapped to `UNKNOWN`.
+          examples:
+            - AUTHORIZED
+            - CAPTURED
+            - DECLINED
+            - ERROR
+        occurredAt:
+          type: string
+          format: date-time
+          description: Time the provider produced the event, used for ordering callbacks.
     ValidationError:
       type: object
       description: |
