@@ -7,14 +7,7 @@ import com.example.payments.service.PaymentService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -37,9 +30,9 @@ public class PaymentController {
                     message = "Must be a UUID.")
             String idempotencyKey,
             @Valid @RequestBody CreatePaymentRequest request) {
-        var result = paymentService.create(
+        var result = paymentService.createPayment(
                 UUID.fromString(idempotencyKey),
-                new PaymentService.CreatePayment(
+                new PaymentService.CreatePaymentData(
                         new BigDecimal(request.amount()), request.currency(), request.customerReference()));
         return new CreatePaymentResponse(result.providerPaymentId());
     }

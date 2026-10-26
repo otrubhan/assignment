@@ -2,6 +2,7 @@ package com.example.payments.api.dto;
 
 import com.example.payments.domain.Currency;
 import com.example.payments.domain.PaymentStatus;
+import com.example.payments.domain.ProviderPaymentStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.Instant;
@@ -11,7 +12,7 @@ import java.util.UUID;
 public record PaymentDetailsResponse(
         UUID id,
         PaymentStatus status,
-        String providerStatus,
+        ProviderPaymentStatus providerStatus,
         String providerPaymentId,
         Instant lastCallbackOccurredAt,
         String amount,
