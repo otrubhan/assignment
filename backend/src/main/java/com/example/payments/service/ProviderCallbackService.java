@@ -1,11 +1,17 @@
 package com.example.payments.service;
 
+import org.springframework.stereotype.Service;
+
 import java.time.Instant;
 
-public interface ProviderCallbackService {
+@Service
+public class ProviderCallbackService {
 
-    void handle(Callback callback);
+    public void handleProviderUpdate(ProviderCallbackData providerCallbackData) {
+        // save the provider callback data to the database, lock the payment record to prevent concurrent updates
+        // update the payment status in the database based on the provider callback data
+    }
 
-    record Callback(String eventId, String providerPaymentId, String status, Instant occurredAt) {
+    public record ProviderCallbackData(String eventId, String providerPaymentId, String status, Instant occurredAt) {
     }
 }

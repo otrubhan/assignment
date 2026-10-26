@@ -21,7 +21,7 @@ public class ProviderCallbackController {
     @PostMapping("/provider-callbacks")
     @ResponseStatus(HttpStatus.OK)
     public void receiveProviderCallback(@Valid @RequestBody ProviderCallbackRequest request) {
-        callbackService.handle(new ProviderCallbackService.Callback(
+        callbackService.handleProviderUpdate(new ProviderCallbackService.ProviderCallbackData(
                 request.eventId(), request.providerPaymentId(), request.status(), request.occurredAt()));
     }
 }
