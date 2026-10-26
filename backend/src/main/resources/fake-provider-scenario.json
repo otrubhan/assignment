@@ -4,3 +4,12 @@
     {"status": "CAPTURED"}
   ]
 }
+/*
+1) captured
+2) declined
+3) error - captured
+4) error - declined
+5) unknown providerPaymentId - captured
+6) invalid payload - declined
+7) error - out-of-order occuredAt - declined
+*/
