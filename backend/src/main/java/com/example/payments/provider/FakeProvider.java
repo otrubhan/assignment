@@ -52,11 +52,13 @@ public class FakeProvider {
 
     private void send(String providerPaymentId, int index) {
         var entry = scenario.callbacks().get(index);
+        String callbackPaymentId = entry.providerPaymentId() == null
+                ? providerPaymentId : entry.providerPaymentId();
         String eventId = entry.eventId() == null
                 ? UUID.randomUUID().toString()
                 : providerPaymentId + ":" + entry.eventId();
         var body = new CallbackBody(
-                eventId, providerPaymentId, entry.status(),
+                eventId, callbackPaymentId, entry.status(),
                 entry.occurredAt() == null ? Instant.now() : entry.occurredAt());
         try {
             client.post()
@@ -65,9 +67,9 @@ public class FakeProvider {
                     .body(body)
                     .retrieve()
                     .toBodilessEntity();
-            System.out.println("Delivered callback eventId=" + eventId + " providerPaymentId=" + providerPaymentId);
+            System.out.println("Delivered callback eventId=" + eventId + " providerPaymentId=" + callbackPaymentId);
         } catch (RestClientException exception) {
-            System.err.println("Callback delivery failed eventId=" + eventId + " providerPaymentId=" + providerPaymentId);
+            System.err.println("Callback delivery failed eventId=" + eventId + " providerPaymentId=" + callbackPaymentId);
         }
         if (index + 1 < scenario.callbacks().size()) {
             schedule(providerPaymentId, index + 1);

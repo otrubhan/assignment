@@ -1,8 +1,7 @@
 package com.example.payments.provider;
 
-import com.example.payments.api.dto.CallbackTimestampDeserializer;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +12,6 @@ import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 
 @Configuration
 public class FakeProviderConfiguration {
@@ -23,7 +21,7 @@ public class FakeProviderConfiguration {
             ObjectMapper objectMapper,
             @Value("${fake-provider.scenario}") Resource resource) {
         ObjectMapper scenarioMapper = objectMapper.copy();
-        scenarioMapper.addMixIn(FakeProviderScenario.Callback.class, CallbackTimestampMixin.class);
+        scenarioMapper.enable(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature());
         try (InputStream input = resource.getInputStream()) {
             FakeProviderScenario scenario = scenarioMapper.readValue(input, FakeProviderScenario.class);
             if (scenario == null) {
@@ -49,10 +47,4 @@ public class FakeProviderConfiguration {
         return builder.requestFactory(new SimpleClientHttpRequestFactory()).build();
     }
 
-    private abstract static class CallbackTimestampMixin {
-
-        CallbackTimestampMixin(String eventId, String status,
-                @JsonDeserialize(using = CallbackTimestampDeserializer.class) Instant occurredAt) {
-        }
-    }
 }
