@@ -58,13 +58,14 @@ public class Payment {
     }
 
     public Payment(UUID id, BigDecimal amount, Currency currency, String customerReference,
-            PaymentStatus status, String providerPaymentId) {
+            PaymentStatus status, String providerPaymentId, String providerStatus) {
         this.id = id;
         this.amount = amount;
         this.currency = currency;
         this.customerReference = customerReference;
         this.status = status;
         this.providerPaymentId = providerPaymentId;
+        this.providerStatus = providerStatus;
     }
 
     @PrePersist

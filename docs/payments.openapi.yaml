@@ -64,6 +64,14 @@ paths:
                     failedFields:
                       amount: Invalid amount.
                       currency: Unsupported currency.
+        '409':
+          description: The Idempotency-Key was already used with a different payment request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+              example:
+                reason: Idempotency-Key was already used with a different payment request.
         '500':
           description: Internal server error. The client may retry this response.
           content:

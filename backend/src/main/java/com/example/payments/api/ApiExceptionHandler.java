@@ -2,6 +2,7 @@ package com.example.payments.api;
 
 import com.example.payments.api.dto.ServerErrorResponse;
 import com.example.payments.api.dto.ValidationErrorResponse;
+import com.example.payments.service.IdempotencyConflictException;
 import com.example.payments.service.PaymentNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(PaymentNotFoundException.class)
     public ResponseEntity<ServerErrorResponse> handlePaymentNotFound(PaymentNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ServerErrorResponse(exception.getMessage()));
+    }
+
+    @ExceptionHandler(IdempotencyConflictException.class)
+    public ResponseEntity<ServerErrorResponse> handleIdempotencyConflict(
+            IdempotencyConflictException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ServerErrorResponse(exception.getMessage()));
     }
 
