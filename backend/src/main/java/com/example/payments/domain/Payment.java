@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -50,10 +49,6 @@ public class Payment {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    @Version
-    @Column(nullable = false)
-    private long version;
-
     protected Payment() {
     }
 
@@ -84,8 +79,7 @@ public class Payment {
         if (lastCallbackOccurredAt != null && !occurredAt.isAfter(lastCallbackOccurredAt)) {
             return false;
         }
-        if (newStatus == PaymentStatus.UNKNOWN
-                && (status == PaymentStatus.SUCCEEDED || status == PaymentStatus.FAILED)) {
+        if (status == PaymentStatus.SUCCEEDED || status == PaymentStatus.FAILED) {
             return false;
         }
 

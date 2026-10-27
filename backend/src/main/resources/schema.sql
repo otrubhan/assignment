@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS payments (
     last_callback_occurred_at TIMESTAMP WITH TIME ZONE,
     created_at                TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at                TIMESTAMP WITH TIME ZONE NOT NULL,
-    version                   BIGINT                   NOT NULL DEFAULT 0,
     CONSTRAINT uk_payments_provider_payment_id UNIQUE (provider_payment_id),
     CONSTRAINT ck_payments_amount_positive CHECK (amount > 0),
     CONSTRAINT ck_payments_status CHECK (status IN ('PENDING', 'SUCCEEDED', 'FAILED', 'UNKNOWN'))
