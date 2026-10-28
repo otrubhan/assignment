@@ -20,3 +20,9 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
     payment_id      UUID                     NOT NULL,
     CONSTRAINT fk_idempotency_keys_payment FOREIGN KEY (payment_id) REFERENCES payments (id)
 );
+
+CREATE TABLE IF NOT EXISTS processed_callback_events (
+    event_id   VARCHAR(255) NOT NULL PRIMARY KEY,
+    payment_id UUID         NOT NULL,
+    CONSTRAINT fk_processed_callback_events_payment FOREIGN KEY (payment_id) REFERENCES payments (id)
+);

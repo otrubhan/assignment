@@ -151,13 +151,17 @@ paths:
         `DECLINED` -> `FAILED`, and `ERROR`, null, or any other value -> `UNKNOWN`.
 
         Processing rules:
-        1. A callback with an already recorded `eventId` is applied only once.
+        1. Event IDs are globally unique across payments. A callback with an already
+           recorded `eventId` is acknowledged without changes.
         2. A callback whose `occurredAt` is earlier than or equal to the last applied one is ignored.
         3. `UNKNOWN` must not replace `SUCCEEDED` or `FAILED`. A later `CAPTURED` or `DECLINED`
            may replace the previous known outcome.
         4. A callback for an unknown `providerPaymentId` is rejected with 404.
 
         A callback that is ignored under rules 1-3 is still acknowledged with 200.
+        Valid callbacks targeting an existing payment have their event ID recorded even
+        when timestamp or status rules suppress the update. Event recording and payment
+        updates are atomic. Unknown payment IDs are rejected before deduplication.
       requestBody:
         required: true
         content:
@@ -304,7 +308,8 @@ components:
         eventId:
           type: string
           minLength: 1
-          description: Provider event identifier used for deduplication.
+          maxLength: 255
+          description: Globally unique provider event identifier, retained for deduplication without expiry.
         providerPaymentId:
           type: string
           minLength: 1

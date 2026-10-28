@@ -1,28 +1,21 @@
 package com.example.payments.service;
 
-import com.example.payments.persistence.PaymentRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
 @Service
 public class ProviderCallbackService {
 
-    private final PaymentRepository paymentRepository;
+    private final CallbackTransactionProcessor processor;
 
-    public ProviderCallbackService(PaymentRepository paymentRepository) {
-        this.paymentRepository = paymentRepository;
+    public ProviderCallbackService(CallbackTransactionProcessor processor) {
+        this.processor = processor;
     }
 
-    @Transactional
-    public void handleProviderUpdate(ProviderCallbackData providerCallbackData) {
-        var payment = paymentRepository.findByProviderPaymentIdForUpdate(providerCallbackData.providerPaymentId())
-                .orElseThrow(PaymentNotFoundException::new);
-        payment.applyProviderUpdate(
-                providerCallbackData.status(),
-                ProviderStatusMapper.toPaymentStatus(providerCallbackData.status()),
-                providerCallbackData.occurredAt());
+    // Keep the monitor until the processor's transaction commits or rolls back.
+    public synchronized void handleProviderUpdate(ProviderCallbackData providerCallbackData) {
+        processor.process(providerCallbackData);
     }
 
     public record ProviderCallbackData(String eventId, String providerPaymentId, String status, Instant occurredAt) {

@@ -166,14 +166,3 @@ digits. Supported currencies are EUR, USD, and CZK. Customer reference length is
 Creation retries with the same key and matching data return the original provider
 payment ID. Reusing the key with different data returns 409. Keys are persisted
 without automatic expiry.
-
-### Current callback decisions and assignment differences
-
-- Updates for the same payment are serialized with a pessimistic row lock.
-- Callbacks earlier than or equal to the last applied timestamp are ignored.
-- Once a payment is SUCCEEDED or FAILED, all further callbacks are ignored.
-  Suppressed callbacks do not change provider status or the last applied timestamp.
-- Callback event IDs are not stored or used for deduplication. Repeated callbacks
-  with the same timestamp are ignored by timestamp ordering.
-
-The one-page assignment discussion belongs in the root-level `NOTES.md`.
