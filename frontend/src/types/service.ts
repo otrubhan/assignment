@@ -11,19 +11,12 @@ export enum BackendPaymentStatus {
   UNKNOWN = 'UNKNOWN',
 }
 
-export enum ProviderPaymentStatus {
-  AUTHORIZED = 'AUTHORIZED',
-  CAPTURED = 'CAPTURED',
-  DECLINED = 'DECLINED',
-  ERROR = 'ERROR',
-}
-
 export interface GetPaymentInfoResponse {
   id: string;
   status: BackendPaymentStatus;
-  providerStatus: ProviderPaymentStatus | undefined;
+  providerStatus?: string;
   providerPaymentId: string;
-  lastCallbackOccurredAt: string | null | undefined;
+  lastCallbackOccurredAt?: string;
   amount: string;
   currency: Currency;
   customerReference: string;

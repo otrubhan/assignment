@@ -4,13 +4,12 @@ import {
   createIdempotencyKey,
   createPayment,
   type CreatePaymentOutcome,
-  fetchPaymentStatus,
   type PaymentStatusOutcome,
   toCreatePaymentOutcome,
 } from '@/services/paymentApi.ts';
-import { usePolling, type PollResult } from '@/composables/polling.ts';
+import { usePolling } from '@/composables/polling.ts';
 import { type PaymentData, type PaymentFormData, PaymentStatusEnum, toPaymentStatus } from '@/types/payment.ts';
-import { STATUS_POLL_INTERVAL_MS } from '@/types/constants.ts';
+import type {CreatePaymentResponse} from "@/types/service.ts";
 
 /** A create attempt whose outcome is not yet definite; resubmitting the same data must reuse its key. */
 interface UnresolvedAttempt {
@@ -72,8 +71,8 @@ function shouldKeepPolling(outcome: PaymentStatusOutcome): boolean {
 export function usePayment() {
   const payment: Ref<PaymentData | undefined> = ref(undefined);
   const isSubmitting = computed(() => payment.value?.paymentStatus === PaymentStatusEnum.SUBMITTING);
-  const statusPolling = usePolling(STATUS_POLL_INTERVAL_MS);
   let unresolvedAttempt: UnresolvedAttempt | undefined;
+  const statusPolling = usePolling();
 
   const resolveIdempotencyKey = (request: PaymentFormData): string => {
     if (unresolvedAttempt && isSameRequest(unresolvedAttempt.request, request)) {
@@ -87,13 +86,11 @@ export function usePayment() {
    * stops on SUCCEEDED/FAILED, on a definite read rejection, on a new submission and on unmount.
    */
   const startStatusPolling = (providerPaymentId: string): void => {
-    statusPolling.start(async (signal): Promise<PollResult> => {
-      const outcome = await fetchPaymentStatus(providerPaymentId, signal);
-      // Drop responses that belong to a stopped poll or a payment that is no longer shown.
-      if (signal.aborted || !payment.value || payment.value.paymentId !== providerPaymentId) return 'stop';
-
+    statusPolling.start(providerPaymentId, (outcome): boolean => {
+      if (!payment.value || payment.value.paymentId !== providerPaymentId) return false;
       payment.value = applyStatusOutcome(payment.value, outcome);
-      return shouldKeepPolling(outcome) ? 'continue' : 'stop';
+      console.log("Updated payment: ", payment.value);
+      return shouldKeepPolling(outcome);
     });
   };
 
@@ -118,7 +115,7 @@ export function usePayment() {
     }
 
     const outcome = await createPayment(request, idempotencyKey).then(
-      (response): CreatePaymentOutcome => ({ kind: 'accepted', providerPaymentId: response.providerPaymentId }),
+      (response: CreatePaymentResponse): CreatePaymentOutcome => ({ kind: 'accepted', providerPaymentId: response.providerPaymentId }),
       toCreatePaymentOutcome
     );
 
@@ -127,5 +124,5 @@ export function usePayment() {
     if (outcome.kind === 'accepted') startStatusPolling(outcome.providerPaymentId);
   };
 
-  return { payment: readonly(payment), isSubmitting, isPolling: statusPolling.isPolling, submit };
+  return { payment: readonly(payment), isSubmitting, submit };
 }

@@ -229,7 +229,7 @@ export function parsePaymentDetails(body: unknown): GetPaymentInfoResponse {
   return {
     id: body.id,
     status: parseBackendStatus(body.status),
-    providerStatus: body.providerStatus,
+    providerStatus: body.providerStatus ?? undefined,
     providerPaymentId: body.providerPaymentId,
     lastCallbackOccurredAt: body.lastCallbackOccurredAt,
     amount: body.amount,
